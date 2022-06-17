@@ -58,7 +58,7 @@ class DetailsNoteViewController: UIViewController {
         
          titleDetails.text = notes.title
          detailsLabel.text = notes.details
-        
+        imageDetails.image = notes.image
         
     }
     

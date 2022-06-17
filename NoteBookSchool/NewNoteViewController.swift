@@ -24,6 +24,9 @@ class NewNoteViewController: UIViewController {
     
     
     @IBOutlet weak var changeNameButton: UIButton!
+    
+    @IBOutlet weak var imageNote: UIImageView!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -38,17 +41,26 @@ class NewNoteViewController: UIViewController {
                 newTitle.text = note.title
                 
                 newDetails.text = note.details
+                
+                imageNote.image = note.image
             }
         }
         // Do any additional setup after loading the view.
     }
     
-
+    @IBAction func changeButton(_ sender: Any) {
+        
+    let imagePicker = UIImagePickerController()
+        imagePicker.delegate = self
+        imagePicker.allowsEditing = true
+        present(imagePicker, animated: true, completion: nil)
+    }
+    
     @IBAction func addButton(_ sender: Any) {
         if isCreation == true {
             
             // added
-      let note = NoteBook(title: newTitle.text!, image: nil, details: newDetails.text)
+            let note = NoteBook(title: newTitle.text!, image: imageNote.image, details: newDetails.text)
         
         
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "NewTodoAdded"), object: nil , userInfo: ["addedTodo" : note])
@@ -78,7 +90,7 @@ class NewNoteViewController: UIViewController {
         }else {
          // edit the current note 
             
-            let note = NoteBook(title: newTitle.text!, image: nil, details: newDetails.text)
+            let note = NoteBook(title: newTitle.text!, image: imageNote.image, details: newDetails.text)
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: "CurrentEdited") , object: nil, userInfo: ["editedTodo": note , "editedIndex" : editIndex])
             
             
@@ -99,3 +111,31 @@ class NewNoteViewController: UIViewController {
     }
     
 }
+
+extension NewNoteViewController: UIImagePickerControllerDelegate & UINavigationControllerDelegate {
+//  يتم استدعاء هذه الفانكشن اذا حدد المستخدم الصوره من البوم الكاميرا
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        //عشان اوصل الى الصوره التي اختارها المستخدم استخدم البراميتر info وهو عباره عن دقشنري
+        let image = info[UIImagePickerController.InfoKey.editedImage] as! UIImage
+        dismiss(animated: true, completion: nil)
+        imageNote.image = image
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+}
+
+
+
+
+
+
+
+
+
