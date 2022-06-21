@@ -6,14 +6,11 @@
 //
 
 import UIKit
+import CoreData
 
 class NoteBookViewController: UIViewController {
     
-    var noteArray = [
-        NoteBook(title: "......" , image: UIImage(named: "Image-1") , details: "........................"),
-        NoteBook(title: "..,,,," , image: UIImage(named: "Image-2") , details: ",,,,,,,,,,,,,,,,,,,,,,"),
-        NoteBook(title: "/////" , image: UIImage(named: "Image-3")),
-        NoteBook(title: "mmmmm" , image: UIImage(named: "Image-4"))
+    var noteArray : [NoteBook] = [
     
     ]
     
@@ -21,7 +18,10 @@ class NoteBookViewController: UIViewController {
     @IBOutlet weak var noteBookTableView: UITableView!
     override func viewDidLoad() {
         super.viewDidLoad()
-       
+        
+        // عشان ابني فانكشن للبيانات المحفوظه في core data
+        
+        self.noteArray =  getTodos()
         // استقبال الاشعار الذي ارسلته من داله postللاضافه
 //      new note
         NotificationCenter.default.addObserver(self, selector: #selector(newTodoAdded), name: NSNotification.Name(rawValue: "NewTodoAdded"), object: nil)
@@ -48,6 +48,8 @@ class NoteBookViewController: UIViewController {
             
             noteArray.append(myNote)
             noteBookTableView.reloadData()
+            
+            storeNota(todo: myNote)
         }
         print(noteArray.count)
       
@@ -62,6 +64,10 @@ class NoteBookViewController: UIViewController {
                 
                 noteArray[index] = mynotes
                 noteBookTableView.reloadData()
+                
+                // استدعاء داله التعديل تبع core data
+                
+                updateNote(todo: mynotes, index: index)
             }
             
         }
@@ -77,8 +83,8 @@ class NoteBookViewController: UIViewController {
                 
             noteArray.remove(at: index)
                 noteBookTableView.reloadData()
-           
-            
+           deleteTodo(index: index)
+          
         }
        
         
@@ -129,6 +135,124 @@ extension NoteBookViewController : UITableViewDataSource , UITableViewDelegate{
             
             navigationController?.pushViewController(viewController, animated: true)
         }}
+  //تحويل todo الى entity فقط ويحفظها في قاعده البيانات من دون عرضها في الشاشه .
+    func storeNota(todo : NoteBook){
+        
+        guard let appdelegate = UIApplication.shared.delegate as? AppDelegate else {return}
+    
+        
+        let mangeContext = appdelegate.persistentContainer.viewContext
+        
+        guard let todoEntity = NSEntityDescription.entity(forEntityName: "NoteBooks", in: mangeContext) else { return  }
+        
+        let todoObject = NSManagedObject.init(entity: todoEntity, insertInto: mangeContext)
+        // حفظ العنوان
+        todoObject.setValue(todo.title, forKey: "title")
+        // حفظ التفاصيل
+        todoObject.setValue(todo.details, forKey: "details")
+        
+        
+        //عشان احفظ التعديلات
+       
+        do{
+       try mangeContext.save()
+            
+            print ("success,,,,,,,,,,,,,")
+        }catch{
+            
+         print("error,,,,,,,,,,,,,,,,,")
+            
+            
+        }
+        
+        
+    }
+    
+   //لتعديل البيانات في core data
+    func updateNote(todo : NoteBook , index : Int){
+        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {return}
+         
+        
+        let context = appDelegate.persistentContainer.viewContext
+        
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "NoteBooks" )
+        
+        do{
+            let result = try context.fetch(fetchRequest) as! [NSManagedObject]
+        
+           result[index].setValue(todo.title, forKey: "title")
+            result[index].setValue(todo.details, forKey: "details")
+            
+            
+            //ممكن استخدم do catch وكمان ممكن بس try  لاني بداخل do  اصلا
+           try context.save()
+         }catch{
+             
+            print ("error ,,,,,,,,,,,,,,,,,,,,,,")
+             
+         }
+        }
+    }
     
     
-}
+func deleteTodo( index : Int){
+    guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {return}
+     
+    
+    let context = appDelegate.persistentContainer.viewContext
+    
+    let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "NoteBooks" )
+    
+    do{
+        let result = try context.fetch(fetchRequest) as! [NSManagedObject]
+    
+       let todoDelete = result[index]
+        context.delete(todoDelete)
+        try context.save()
+      }catch{
+          
+         print ("error ,,,,,,,,,,,,,,,,,,,,,,")
+          
+      }
+     }
+ 
+        
+    
+    
+    
+    
+    //لعرض البيانات من core data
+    func getTodos()-> [NoteBook]{
+        
+        var notes: [NoteBook] = []
+        //عشان اوصل لقاعده البيانات اولا استخدم appdelegate
+       guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {return[]}
+        
+        let context = appDelegate.persistentContainer.viewContext
+        //طلب دخول لقاعده البيانات وقراءه بيانات
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "NoteBooks" )
+        
+        // عشان انفذ الطلب واعرضه
+        do{
+            //احول الريسلت الي شي اعرفه واستفيد منه الي هو nsmangeobject
+           let result = try context.fetch(fetchRequest) as! [NSManagedObject]
+            for mangeTodo in result{
+                let title = mangeTodo.value(forKey: "title") as? String
+              let details = mangeTodo.value(forKey: "details")  as? String
+                
+                let todo = NoteBook(title: title ?? "" , image: nil, details:  details ?? "")
+                
+                notes.append(todo)
+            }
+            
+        }catch{
+            
+           print ("error ,,,,,,,,,,,,,,,,,,,,,,")
+            
+        }
+        return notes
+    }
+    
+    
+    
+
