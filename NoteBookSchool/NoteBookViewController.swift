@@ -151,6 +151,14 @@ extension NoteBookViewController : UITableViewDataSource , UITableViewDelegate{
         // حفظ التفاصيل
         todoObject.setValue(todo.details, forKey: "details")
         
+//        تحويل الصور الى بيناري داتا
+        if let image = todo.image{
+            let imageData = image.jpegData(compressionQuality: 1)
+            todoObject.setValue(imageData, forKey: "image")
+            
+            
+            
+        }
         
         //عشان احفظ التعديلات
        
@@ -183,6 +191,11 @@ extension NoteBookViewController : UITableViewDataSource , UITableViewDelegate{
            result[index].setValue(todo.title, forKey: "title")
             result[index].setValue(todo.details, forKey: "details")
             
+            if let image = todo.image{
+                let imageData = image.jpegData(compressionQuality: 1)
+                result[index].setValue(imageData, forKey: "image")
+            }
+         
             
             //ممكن استخدم do catch وكمان ممكن بس try  لاني بداخل do  اصلا
            try context.save()
@@ -240,7 +253,13 @@ func deleteTodo( index : Int){
                 let title = mangeTodo.value(forKey: "title") as? String
               let details = mangeTodo.value(forKey: "details")  as? String
                 
-                let todo = NoteBook(title: title ?? "" , image: nil, details:  details ?? "")
+    //تحويل الصوره الي data ثم uiimage
+                var todoImage : UIImage? = nil
+                if let imageFromContext = mangeTodo.value(forKey: "image") as? Data{
+                   todoImage = UIImage(data: imageFromContext)
+                }
+                
+                let todo = NoteBook(title: title ?? "" , image: todoImage, details:  details ?? "")
                 
                 notes.append(todo)
             }
